@@ -1,0 +1,12 @@
+resolver:
+  url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/19/30.yaml
+
+packages:
+- .
+
+extra-deps:
+- git: git@github.com:fullstack-development/fsd-prelude.git
+  commit: 180a93d2410bbc545e6932c6ff32d8b31ca4ea51
+
+- git: git@github.com:fullstack-development/reducible.git
+  commit: 1aa256646f541905cc95b57e6e9a41e6c8725faa

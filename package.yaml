@@ -1,0 +1,52 @@
+name:                logpipe
+version:             0.1.0.0
+github:              "githubuser/logpipe"
+license:             BSD3
+author:              Evgeny Osipenko (evgeny.osipenko@metalamp.io)
+maintainer:          Evgeny Osipenko (evgeny.osipenko@metalamp.io)
+
+extra-source-files:
+- README.md
+- CHANGELOG.md
+
+description:         Please see the README on GitHub at <https://github.com/githubuser/logpipe#readme>
+
+default-extensions:
+- DataKinds
+- DeriveAnyClass
+- DeriveGeneric
+- DerivingStrategies
+- DerivingVia
+- FlexibleContexts
+- GeneralizedNewtypeDeriving
+- KindSignatures
+- LambdaCase
+- NamedFieldPuns
+- OverloadedStrings
+- RankNTypes
+- RecordWildCards
+- ScopedTypeVariables
+- TemplateHaskell
+- TypeApplications
+- TypeOperators
+- NoImplicitPrelude
+
+ghc-options:
+- -Wall
+
+dependencies:
+- aeson
+- ansi-terminal
+- base
+- bytestring
+- containers
+- fsd-prelude
+- reducible
+- stm
+- text
+- time
+- transformers
+- yaml
+
+library:
+  source-dirs: src

@@ -1,0 +1,69 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.35.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           logpipe
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/githubuser/logpipe#readme>
+homepage:       https://github.com/githubuser/logpipe#readme
+bug-reports:    https://github.com/githubuser/logpipe/issues
+author:         Evgeny Osipenko (evgeny.osipenko@metalamp.io)
+maintainer:     Evgeny Osipenko (evgeny.osipenko@metalamp.io)
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/githubuser/logpipe
+
+library
+  exposed-modules:
+      LogPipe
+      LogPipe.Class
+      LogPipe.Common
+      LogPipe.Writers.Console
+      LogPipe.Writers.File
+  other-modules:
+      Paths_logpipe
+  hs-source-dirs:
+      src
+  default-extensions:
+      DataKinds
+      DeriveAnyClass
+      DeriveGeneric
+      DerivingStrategies
+      DerivingVia
+      FlexibleContexts
+      GeneralizedNewtypeDeriving
+      KindSignatures
+      LambdaCase
+      NamedFieldPuns
+      OverloadedStrings
+      RankNTypes
+      RecordWildCards
+      ScopedTypeVariables
+      TemplateHaskell
+      TypeApplications
+      TypeOperators
+      NoImplicitPrelude
+  ghc-options: -Wall
+  build-depends:
+      aeson
+    , ansi-terminal
+    , base
+    , bytestring
+    , containers
+    , fsd-prelude
+    , reducible
+    , stm
+    , text
+    , time
+    , transformers
+    , yaml
+  default-language: Haskell2010
