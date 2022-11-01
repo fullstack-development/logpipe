@@ -35,6 +35,9 @@ data LogContext = LogContext
     }
     deriving (Show, Eq, Ord, Generic)
 
+instance IsString LogContext where
+    fromString str = LogContext (fromString str) mempty
+
 instance Semigroup LogContext where
     LogContext dpa ma <> LogContext dpb mb =
         LogContext (dpa <> dpb) (ma <> mb)
