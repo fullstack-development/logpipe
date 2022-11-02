@@ -6,7 +6,7 @@ module LogPipe
     , Common.LogMessage (..)
     , Common.LogLevel (..)
     , Common.metaEntry
-    , Common.closeLogSystem
+    , Common.synchronize
     , Writers.Console.attachConsoleWriter
     )
 where
