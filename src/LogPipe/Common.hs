@@ -1,6 +1,9 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+
 module LogPipe.Common
-    ( metaEntry
-    , lookupMeta
+    ( metaKey
+    , metaEntry
+    , lookupMetaEntry
     , LogMessage (..)
     , LogContext (..)
     , LogLevel (..)
@@ -26,27 +29,28 @@ import qualified Type.Reflection as Type
 
 
 
+metaKey :: forall t. (Type.Typeable t) => Text
+metaKey = Text.pack $ lowerInit $ show $ Type.typeRep @t
+
 metaEntry ::
-    (Type.Typeable t, Aeson.ToJSON t) =>
+    (Aeson.ToJSON t) =>
+    Text ->
     t ->
     Map Text Aeson.Value
-metaEntry object = Map.singleton metaKey metaValue
+metaEntry key object = Map.singleton key metaValue
   where
-    metaKey = Text.pack $ lowerInit $ show $ Type.typeOf object
     metaValue = Aeson.toJSON object
 
-lookupMeta ::
-    forall t.
-    (Type.Typeable t, Aeson.FromJSON t) =>
+lookupMetaEntry ::
+    (Aeson.FromJSON t) =>
+    Text ->
     Map Text Aeson.Value ->
     Maybe t
-lookupMeta m = do
-    value <- Map.lookup metaKey m
+lookupMetaEntry key m = do
+    value <- Map.lookup key m
     case Aeson.fromJSON value of
         Aeson.Success x -> Just x
         Aeson.Error _ -> Nothing
-  where
-    metaKey = Text.pack $ lowerInit $ show $ Type.typeRep @t
 
 
 

@@ -5,7 +5,9 @@ module LogPipe
     , Common.LogContext (..)
     , Common.LogMessage (..)
     , Common.LogLevel (..)
+    , Common.metaKey
     , Common.metaEntry
+    , Common.lookupMetaEntry
     , Common.synchronize
     , Writers.Console.attachConsoleWriter
     )
@@ -17,8 +19,20 @@ import qualified LogPipe.Common as Common
 import qualified LogPipe.Writers.Console as Writers.Console
 import qualified Type.Reflection as Type
 
-meta :: (Type.Typeable t, ToJSON t) => t -> Common.LogContext
-meta object = Common.LogContext "" (Common.metaEntry object)
+meta ::
+    forall t. (Type.Typeable t, ToJSON t) => t -> Common.LogContext
+meta object =
+    meta' (Common.metaKey @t) object
+
+meta' ::
+    (ToJSON t) => Text -> t -> Common.LogContext
+meta' key object =
+    Common.LogContext "" (Common.metaEntry key object)
+
+lookupMeta ::
+    forall t. (Type.Typeable t, FromJSON t) => Common.LogContext -> Maybe t
+lookupMeta (Common.LogContext _ m) =
+    Common.lookupMetaEntry (Common.metaKey @t) m
 
 at :: Text -> Common.LogContext
 at dp = Common.LogContext dp mempty

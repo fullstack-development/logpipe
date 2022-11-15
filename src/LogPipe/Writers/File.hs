@@ -69,7 +69,7 @@ plainText openMode = Formatter
         let domain = logContextDomainPrefix context
         let meta = logContextMetadata context
         let introTag =
-                case lookupMeta meta of
+                case lookupMetaEntry "logLevel" meta of
                     Nothing         -> "         "
                     Just LLDebug    -> " [DEBUG] "
                     Just LLInfo     -> " [INFO]  "

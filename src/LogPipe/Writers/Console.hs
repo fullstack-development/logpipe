@@ -58,7 +58,7 @@ consoleWriter _ msg = do
     meta = logContextMetadata context
     context = logMessageContext msg
     introSGR =
-        case lookupMeta meta of
+        case lookupMetaEntry "logLevel" meta of
             Nothing ->
                 [ ANSI.SetColor ANSI.Foreground ANSI.Vivid ANSI.White
                 ]
@@ -79,7 +79,7 @@ consoleWriter _ msg = do
                 , ANSI.SetColor ANSI.Foreground ANSI.Dull ANSI.Black
                 ]
     introTag =
-        case lookupMeta meta of
+        case lookupMetaEntry "logLevel" meta of
             Nothing         -> "         "
             Just LLDebug    -> " [DEBUG] "
             Just LLInfo     -> " [INFO]  "
