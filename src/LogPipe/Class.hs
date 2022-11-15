@@ -45,6 +45,16 @@ instance (MonadLogContext m) => MonadLogContext (Reader.ReaderT r m) where
 instance
     {-# OVERLAPPING #-}
     (MonadLog m) =>
+    MonadLog (Reader.ReaderT Common.LogContext m)
+  where
+    sendLogMessage (Common.LogMessage msgContext msgText) =
+        ReaderT $ \appContext ->
+            sendLogMessage $
+                Common.LogMessage (appContext <> msgContext) msgText
+
+instance
+    {-# OVERLAPPING #-}
+    (MonadLog m) =>
     MonadLogContext (Reader.ReaderT Common.LogContext m)
   where
     askLogContext = Reader.ask
