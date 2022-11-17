@@ -137,6 +137,7 @@ attachWriter wrapper lineHandler = do
     queueHeadTVar <- newTVarIO $ Just initialInputTMVar
     let handle = WriterHandle writerQueueTailTVar
     void $ uninterruptibleMask_ $ do
+        void $ mkWeakTVar writerQueueTailTVar (detachWriter handle)
         atomically $ modifyTVar globalWriterSet (handle Seq.:<|)
         forkIOWithUnmask $ \restore -> do
             finally
