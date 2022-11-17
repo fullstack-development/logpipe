@@ -5,6 +5,7 @@ where
 
 import FSD.Prelude
 import Control.Concurrent.STM
+import Data.Word
 import LogPipe.Common
 import qualified Data.Aeson as Aeson
 import qualified Data.Char as Char
@@ -18,6 +19,7 @@ import qualified Data.Time as Time
 import qualified Data.Yaml.Pretty as Yaml.Pretty
 import qualified System.Console.ANSI as ANSI
 import qualified System.IO.Unsafe
+import qualified Text.Printf
 
 currentConsoleWriterTVar :: TVar (Maybe WriterHandle)
 currentConsoleWriterTVar = System.IO.Unsafe.unsafePerformIO $ newTVarIO Nothing
@@ -40,25 +42,26 @@ attachConsoleWriter = do
 
 consoleWriter ::
     () ->
+    Word64 ->
     LogMessage ->
     IO ()
-consoleWriter _ msg = do
+consoleWriter _ tid msg = do
     now <- Time.getCurrentTime
     let nowString =
             Time.formatTime Time.defaultTimeLocale "%F %T%6Q" now
     let message =
             Text.pack (ANSI.setSGRCode introSGR) <>
-            Text.pack nowString <> introTag <> domain <> "\n" <>
-            renderMeta (Map.delete "logLevel" meta) <>
+            Text.pack nowString <> threadTag <> introTag <> domain <> "\n" <>
+            renderMeta (Map.delete "logLevel" metadata) <>
             trimRight (prefixEachLineWith "    " (logMessageText msg)) <>
             Text.pack (ANSI.setSGRCode [ANSI.Reset])
     Text.IO.putStrLn message
   where
     domain = logContextDomainPrefix context
-    meta = logContextMetadata context
+    metadata = logContextMetadata context
     context = logMessageContext msg
     introSGR =
-        case lookupMetaEntry "logLevel" meta of
+        case lookupMetaEntry "logLevel" metadata of
             Nothing ->
                 [ ANSI.SetColor ANSI.Foreground ANSI.Vivid ANSI.White
                 ]
@@ -78,8 +81,10 @@ consoleWriter _ msg = do
                 [ ANSI.SetColor ANSI.Background ANSI.Dull ANSI.Red
                 , ANSI.SetColor ANSI.Foreground ANSI.Dull ANSI.Black
                 ]
+    threadTag =
+        packText $ Text.Printf.printf " (%16x)" tid
     introTag =
-        case lookupMetaEntry "logLevel" meta of
+        case lookupMetaEntry "logLevel" metadata of
             Nothing         -> "         "
             Just LLDebug    -> " [DEBUG] "
             Just LLInfo     -> " [INFO]  "

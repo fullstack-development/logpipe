@@ -1,7 +1,10 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 
 module LogPipe.Common
-    ( metaKey
+    ( meta
+    , meta'
+    , lookupMeta
+    , metaKey
     , metaEntry
     , lookupMetaEntry
     , LogMessage (..)
@@ -18,6 +21,7 @@ where
 import FSD.Prelude
 import Control.Concurrent
 import Control.Concurrent.STM
+import Data.Word
 import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.TH as Aeson.TH
 import qualified Data.List as List
@@ -25,7 +29,27 @@ import qualified Data.Map as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import qualified System.IO.Unsafe
+import qualified Text.Read
 import qualified Type.Reflection as Type
+
+
+
+
+
+meta ::
+    forall t. (Type.Typeable t, ToJSON t) => t -> LogContext
+meta object =
+    meta' (metaKey @t) object
+
+meta' ::
+    (ToJSON t) => Text -> t -> LogContext
+meta' key object =
+    LogContext "" (metaEntry key object)
+
+lookupMeta ::
+    forall t. (Type.Typeable t, FromJSON t) => LogContext -> Maybe t
+lookupMeta (LogContext _ m) =
+    lookupMetaEntry (metaKey @t) m
 
 
 
@@ -93,7 +117,7 @@ Aeson.TH.deriveJSON
 
 
 data ChannelInput
-    = ChannelInputLog LogMessage (TMVar ChannelInput)
+    = ChannelInputLog Word64 LogMessage (TMVar ChannelInput)
     | ChannelInputSynchronize (TVar Bool) (TVar Bool) (TMVar ChannelInput)
     | ChannelInputTerminate (TVar Bool)
 
@@ -105,7 +129,7 @@ globalWriterSet = System.IO.Unsafe.unsafePerformIO $ newTVarIO Seq.Empty
 
 attachWriter ::
     (forall t. (b -> IO t) -> IO t) ->
-    (b -> LogMessage -> IO ()) ->
+    (b -> Word64 -> LogMessage -> IO ()) ->
     IO WriterHandle
 attachWriter wrapper lineHandler = do
     initialInputTMVar <- newEmptyTMVarIO
@@ -133,11 +157,11 @@ attachWriter wrapper lineHandler = do
                     Just inputTMVar -> do
                         input <- readTMVar inputTMVar
                         case input of
-                            ChannelInputLog logMessage next -> do
+                            ChannelInputLog tid logMessage next -> do
                                 writeTVar queueHeadTVar $ Just next
                                 pure $ do
                                     forM_ mbResource $ \resource ->
-                                        lineHandler resource logMessage
+                                        lineHandler resource tid logMessage
                                     goListen
                             ChannelInputSynchronize doneTVar waitTVar next -> do
                                 writeTVar queueHeadTVar $ Just next
@@ -174,6 +198,14 @@ sendLogMessage ::
     LogMessage ->
     IO ()
 sendLogMessage logMessage = do
+    threadPtr <- myThreadId
+    let threadId =
+            case
+                List.stripPrefix "ThreadId " (show threadPtr)
+                    >>= Text.Read.readMaybe
+              of
+                Nothing -> 0
+                Just n -> n
     writers <- atomically $ readTVar globalWriterSet
     forM_ writers $ \(WriterHandle writerQueueTailTVar) -> do
         atomically $ do
@@ -183,7 +215,7 @@ sendLogMessage logMessage = do
                 Just queueTail -> do
                     next <- newEmptyTMVar
                     putTMVar queueTail $
-                        ChannelInputLog logMessage next
+                        ChannelInputLog threadId logMessage next
                     writeTVar writerQueueTailTVar $ Just next
 
 synchronize ::

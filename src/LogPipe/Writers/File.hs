@@ -7,6 +7,7 @@ module LogPipe.Writers.File
 where
 
 import FSD.Prelude
+import Data.Word
 import LogPipe.Common
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString as BS
@@ -17,6 +18,7 @@ import qualified Data.Text.Encoding as Text.Encoding
 import qualified Data.Time as Time
 import qualified Data.Yaml.Pretty as Yaml.Pretty
 import qualified System.IO
+import qualified Text.Printf
 
 data OpenMode
     = OMAppend
@@ -24,7 +26,7 @@ data OpenMode
 
 data Formatter = Formatter
     { formatterOpenMode :: OpenMode
-    , formatterRenderMessage :: LogMessage -> IO ByteString
+    , formatterRenderMessage :: Word64 -> LogMessage -> IO ByteString
     }
 
 attachFileWriter ::
@@ -52,24 +54,26 @@ fileWrapper (OMRewrite intro outro) path inner = do
         pure r
 
 fileWriter ::
-    (LogMessage -> IO ByteString) ->
+    (Word64 -> LogMessage -> IO ByteString) ->
     System.IO.Handle ->
+    Word64 ->
     LogMessage ->
     IO ()
-fileWriter renderMessage handle msg = do
-    bs <- renderMessage msg
+fileWriter renderMessage handle tid msg = do
+    bs <- renderMessage tid msg
     BS.hPutStr handle bs
 
 plainText :: OpenMode -> Formatter
 plainText openMode = Formatter
     { formatterOpenMode = openMode
-    , formatterRenderMessage = \msg -> do
+    , formatterRenderMessage = \tid msg -> do
         let msgText = logMessageText msg
         let context = logMessageContext msg
         let domain = logContextDomainPrefix context
-        let meta = logContextMetadata context
+        let metadata = logContextMetadata context
+        let threadTag = packText $ Text.Printf.printf "(%16x)" tid
         let introTag =
-                case lookupMetaEntry "logLevel" meta of
+                case lookupMetaEntry "logLevel" metadata of
                     Nothing         -> "         "
                     Just LLDebug    -> " [DEBUG] "
                     Just LLInfo     -> " [INFO]  "
@@ -80,9 +84,9 @@ plainText openMode = Formatter
         let nowString =
                 Time.formatTime Time.defaultTimeLocale "%F %T%6Q" now
         pure $
-            toUtf8 (Text.pack nowString) <> introTag <>
+            toUtf8 (Text.pack nowString) <> toUtf8 threadTag <> introTag <>
             toUtf8 domain <> "\n" <>
-            renderMeta (Map.delete "logLevel" meta) <>
+            renderMeta (Map.delete "logLevel" metadata) <>
             trimRight (prefixEachLineWith "    " (toUtf8 msgText))
     }
   where
